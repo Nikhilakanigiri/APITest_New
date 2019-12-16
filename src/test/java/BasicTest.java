@@ -14,7 +14,7 @@ import static io.restassured.RestAssured.given;
 public class BasicTest {
 
     public static String authToken;
-    public static String itemId;
+    public static String itemlists;
 
     @Test
     public void testStatusCode() {
@@ -100,7 +100,7 @@ public class BasicTest {
     public void testFiltercolor() {
         Response res = given()
                 .log().all()
-                .queryParam("filter[color]", "red,XL")
+                .queryParam("filter[color]", "XL", "red")
                 .get("https://spree-vapasi-prod.herokuapp.com/api/v2/storefront/products");
         System.out.println(res.prettyPeek());
     }
@@ -115,20 +115,20 @@ public class BasicTest {
     }
 
     @BeforeClass
-    public void  authToken(){
-        Response res=given()
-                .formParam("grant_type","password")
-                .formParam("username","kanigirinikhila9@gmail.com")
-                .formParam("password","New1234")
+    public void authToken() {
+        Response res = given()
+                .formParam("grant_type", "password")
+                .formParam("username", "kanigirinikhila9@gmail.com")
+                .formParam("password", "New1234")
                 .post("https://spree-vapasi-prod.herokuapp.com/spree_oauth/token");
         System.out.println(res.prettyPrint());
-        authToken="Bearer " + res.path("access_token");
+        authToken = "Bearer " + res.path("access_token");
         System.out.println(authToken);
     }
 
 
     @Test
-    public void testPostCall1(){
+    public void testPostCall1() {
         Map<String, String> headers = new HashMap<String, String>();
         headers.put("Content-Type", "application/json");
         headers.put("Authorization", authToken);
@@ -145,7 +145,7 @@ public class BasicTest {
     }
 
     @Test
-    public void testPostCall2(){
+    public void testPostCall2() {
         Map<String, String> headers = new HashMap<String, String>();
         headers.put("Content-Type", "application/json");
         headers.put("Authorization", authToken);
@@ -161,9 +161,8 @@ public class BasicTest {
         Assert.assertEquals(res.statusCode(), 200);
     }
 
-
     @Test
-    public void viewCart(){
+    public void viewCart() {
         Map<String, String> headers = new HashMap<String, String>();
         headers.put("Content-Type", "application/json");
         headers.put("Authorization", authToken);
@@ -173,8 +172,17 @@ public class BasicTest {
                 //.queryParam("filter[cart]=currency")
                 //.queryParam("filter[cart]=number")
                 .get("https://spree-vapasi-prod.herokuapp.com/api/v2/storefront/cart");
+        //Assert.assertEquals(res.statusCode(), 200);
         System.out.println(res.jsonPath().prettify());
 
+        JsonPath jsonPathEvaluator = res.jsonPath();
+        List<Map> itemlist = (List<Map>) jsonPathEvaluator.getList("data").get(Integer.parseInt("relationships"));
+        for (Map itemlist : itemlists) {
+            Map itemlists = (Map) itemlist.get("line-items.data");
+            //System.out.println("Currency List",attributes.get("currency"));
+            Assert.assertEquals(res.statusCode(), 200);
+
+        }
     }
 
     @Test
@@ -182,10 +190,9 @@ public class BasicTest {
         Map<String, String> headers = new HashMap<String, String>();
         headers.put("Content-Type", "application/json");
         headers.put("Authorization", authToken);
-        headers.put("Item id", itemId)
         Response res = given()
                 .headers(headers)
-                .delete("https://spree-vapasi-prod.herokuapp.com/api/v2/storefront/cart/remove_line_item/420");
+                .delete("https://spree-vapasi-prod.herokuapp.com/api/v2/storefront/cart/remove_line_item/"+itemlists);
         Assert.assertEquals(res.statusCode(), 200);
 
     }
